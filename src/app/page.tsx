@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * Home Page with React Flow Diagram
@@ -6,19 +6,10 @@
  */
 import dynamic from "next/dynamic";
 
-// Use dynamic import for the FlowDiagram component
-const FlowDiagram = dynamic(
-  () => import('@/components/FlowDiagram'),
-  { ssr: false }
-);
+const FlowPageClient = dynamic(() => import("../components/FlowPageClient"), {
+  ssr: false,
+});
 
 export default function Home() {
-  return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Next.js + Supabase + React Flow</h1>
-      <div className="border rounded-lg overflow-hidden">
-        <FlowDiagram />
-      </div>
-    </div>
-  );
+  return <FlowPageClient />;
 }
