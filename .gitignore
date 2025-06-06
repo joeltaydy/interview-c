@@ -134,3 +134,7 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+
+src/components/data.tsx
+// This file contains the initial data for the flow diagram, including nodes and edges.

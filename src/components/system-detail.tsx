@@ -20,7 +20,9 @@ const SystemDetail: React.FC<Props> = ({ nodes, edges }) => (
         {nodes.map((node) => (
           <tr key={node.id}>
             <td className="border px-2 py-1">{node.id}</td>
-            <td className="border px-2 py-1">{node.data?.label}</td>
+            <td className="border px-2 py-1">
+              {String(node.data?.label ?? "")}
+            </td>
           </tr>
         ))}
       </tbody>

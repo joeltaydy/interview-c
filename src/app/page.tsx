@@ -6,7 +6,7 @@
  */
 import dynamic from "next/dynamic";
 
-const FlowPageClient = dynamic(() => import("../components/FlowPageClient"), {
+const FlowPageClient = dynamic(() => import("../components/flow-page-client"), {
   ssr: false,
 });
 
