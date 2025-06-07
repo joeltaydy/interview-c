@@ -30,6 +30,7 @@ type FlowDiagramProps = {
   edges: Edge[];
   setEdges: React.Dispatch<React.SetStateAction<Edge[]>>;
   onEdgesChange: (changes: any) => void;
+  onNodeClick: (event: React.MouseEvent, node: Node) => void;
 };
 
 export default function FlowDiagram({
@@ -39,6 +40,7 @@ export default function FlowDiagram({
   edges,
   setEdges,
   onEdgesChange,
+  onNodeClick,
 }: FlowDiagramProps) {
   const [nodeName, setNodeName] = useState("");
 
@@ -47,26 +49,26 @@ export default function FlowDiagram({
     [setEdges]
   );
 
-  const addNode = useCallback(() => {
-    if (!nodeName) return;
-    const newNode: Node = {
-      id: `${nodes.length + 1}`,
-      data: { label: nodeName },
-      position: {
-        x: Math.random() * 500,
-        y: Math.random() * 500,
-      },
-      style: {
-        background: "#ff9900",
-        color: "white",
-        border: "1px solid #cc7a00",
-        borderRadius: "8px",
-        padding: "10px",
-      },
-    };
-    setNodes((nds) => [...nds, newNode]);
-    setNodeName("");
-  }, [nodeName, nodes.length, setNodes]);
+  // const addNode = useCallback(() => {
+  //   if (!nodeName) return;
+  //   const newNode: Node = {
+  //     id: `${nodes.length + 1}`,
+  //     data: { label: nodeName },
+  //     position: {
+  //       x: Math.random() * 500,
+  //       y: Math.random() * 500,
+  //     },
+  //     style: {
+  //       background: "#ff9900",
+  //       color: "white",
+  //       border: "1px solid #cc7a00",
+  //       borderRadius: "8px",
+  //       padding: "10px",
+  //     },
+  //   };
+  //   setNodes((nds) => [...nds, newNode]);
+  //   setNodeName("");
+  // }, [nodeName, nodes.length, setNodes]);
 
   return (
     <div style={{ width: "100%", height: "600px" }}>
@@ -78,6 +80,7 @@ export default function FlowDiagram({
         onConnect={onConnect}
         connectionMode={ConnectionMode.Loose}
         fitView
+        onNodeClick={onNodeClick}
       >
         <Controls />
         <MiniMap />
@@ -86,7 +89,7 @@ export default function FlowDiagram({
           position="top-right"
           className="bg-white p-4 rounded-md shadow-md"
         >
-          <h3 className="text-lg font-bold mb-2">Add Node</h3>
+          {/* <h3 className="text-lg font-bold mb-2">Add Node</h3>
           <div className="flex gap-2">
             <input
               type="text"
@@ -101,7 +104,7 @@ export default function FlowDiagram({
             >
               Add
             </button>
-          </div>
+          </div> */}
         </Panel>
       </ReactFlow>
     </div>
