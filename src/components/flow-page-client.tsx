@@ -123,8 +123,8 @@ export default function FlowPageClient() {
         animated: iface.directional,
         style: {},
       }));
-      console.log("Flow Nodes:", sortedFlowNodes);
-      console.log("Flow Edges:", flowEdges);
+      // console.log("Flow Nodes:", sortedFlowNodes);
+      // console.log("Flow Edges:", flowEdges);
       setNodes(sortedFlowNodes);
       setEdges(flowEdges);
     }
@@ -134,6 +134,12 @@ export default function FlowPageClient() {
   useEffect(() => {
     setNodes((nds) =>
       nds.map((node) => {
+        if (node.id === currentSystem) {
+          return {
+            ...node,
+            hidden: false, // Show the current system node
+          };
+        }
         if (node.parentId) {
           if (node.parentId === currentSystem) {
             return {

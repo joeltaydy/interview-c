@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { Node, Edge } from "@xyflow/react";
+import React, { useState, useMemo, useEffect } from "react";
+import { Node, Edge, applyNodeChanges, NodeReplaceChange } from "@xyflow/react";
 import { createClient } from "@supabase/supabase-js";
 import DescendantRow from "@/components/system-detail-row";
 import { getDescendantIds } from "@/lib/util/node_util";
+import Alert from "./alert";
 
 type Props = {
   nodes: Node[];
@@ -24,6 +25,11 @@ const SystemDetail: React.FC<Props> = ({
   currentSystem,
   setCurrentSystem,
 }) => {
+  const [alert, setAlert] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+
   // Find current system node from nodes array and initialize form state.
   const currentNode = nodes.find((node) => node.id === currentSystem);
 
@@ -34,8 +40,15 @@ const SystemDetail: React.FC<Props> = ({
     String(currentNode?.data?.category || "")
   );
 
+  const [descendantNodes, setDescendantNodes] = useState<Node[]>([]);
+
+  // States for creating a new child system.
+  const [showChildForm, setShowChildForm] = useState<boolean>(false);
+  const [childName, setChildName] = useState<string>("");
+  const [childCategory, setChildCategory] = useState<string>("");
+
   // Update form state when current system changes.
-  React.useEffect(() => {
+  useEffect(() => {
     if (currentNode) {
       setName(String(currentNode.data.label));
       setCategory(String(currentNode.data.category));
@@ -51,8 +64,9 @@ const SystemDetail: React.FC<Props> = ({
   }, [currentSystem, nodes]);
 
   // Filter descendant nodes.
-  const descendantNodes = useMemo(() => {
-    return nodes.filter((node) => descendantIds.includes(node.id));
+  useEffect(() => {
+    const filtered = nodes.filter((node) => descendantIds.includes(node.id));
+    setDescendantNodes(filtered);
   }, [nodes, descendantIds]);
 
   // Update current system details.
@@ -62,23 +76,25 @@ const SystemDetail: React.FC<Props> = ({
       .update({ name, category })
       .eq("name", currentSystem);
     if (error) {
-      console.error("Update error", error);
+      setAlert({ message: "Error updating current system", type: "error" });
     } else {
-      alert("Current system updated");
+      setAlert({ message: "Current system updated", type: "success" });
     }
   }
 
-  // Create a new child system.
-  async function handleCreateChild() {
-    const childName = prompt("Enter new child system name");
-    if (!childName) return;
-    const childCategory = prompt("Enter new child system category") || "";
+  // Create a new child system via inline form.
+  async function handleSubmitCreateChild() {
+    if (!childName) {
+      setAlert({ message: "Please enter a child system name", type: "error" });
+      return;
+    }
     // Insert new system into the 'systems' table.
     let { error } = await supabase
       .from("systems")
       .insert([{ name: childName, category: childCategory }]);
     if (error) {
       console.error("Insert error", error);
+      setAlert({ message: "Descendant system create failed", type: "error" });
       return;
     }
     // Create a parent-child relationship in the 'system_hierarchy' table.
@@ -86,9 +102,13 @@ const SystemDetail: React.FC<Props> = ({
       .from("system_hierarchy")
       .insert([{ parent_id: currentSystem, child_id: childName }]));
     if (error) {
-      console.error("Hierarchy insert error", error);
+      setAlert({ message: "Descendant system create failed", type: "error" });
     } else {
-      alert("Child system created");
+      setAlert({ message: "Child system created", type: "success" });
+      // Clear form and hide it.
+      setChildName("");
+      setChildCategory("");
+      setShowChildForm(false);
     }
   }
 
@@ -100,9 +120,9 @@ const SystemDetail: React.FC<Props> = ({
       .delete()
       .eq("name", childId);
     if (error) {
-      console.error("Delete error", error);
+      setAlert({ message: "Descendant system delete failed", type: "error" });
     } else {
-      alert("Child system deleted");
+      setAlert({ message: "Descendant system deleted", type: "success" });
     }
   }
 
@@ -117,71 +137,111 @@ const SystemDetail: React.FC<Props> = ({
       .update({ name: newName, category: newCategory })
       .eq("name", childId);
     if (error) {
-      console.error("Update descendant error", error);
+      setAlert({ message: "Error updating descendant system", type: "error" });
     } else {
-      alert("Descendant system updated");
+      setAlert({ message: "Descendant system updated", type: "success" });
     }
   }
 
   return (
     <div>
       <h2 className="text-xl font-bold mb-2">System Details</h2>
-      <div className="mb-4 border p-4">
-        <h3 className="font-semibold mb-2">Current System</h3>
-        <div className="mb-2">
-          <label className="mr-2">Name:</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="border rounded px-2 py-1"
-          />
-        </div>
-        <div className="mb-2">
-          <label className="mr-2">Category:</label>
-          <input
-            type="text"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="border rounded px-2 py-1"
-          />
-        </div>
-        <button
-          onClick={handleUpdateCurrent}
-          className="bg-blue-500 text-white px-3 py-1 rounded"
-        >
-          Update Current System
-        </button>
-      </div>
-      <div className="mb-4 border p-4">
-        <h3 className="font-semibold mb-2">Child Systems</h3>
-        <button
-          onClick={handleCreateChild}
-          className="bg-green-500 text-white px-3 py-1 rounded mb-2"
-        >
-          Create Child System
-        </button>
-        <table className="table-auto w-full border mt-2">
-          <thead>
-            <tr>
-              <th className="border px-2 py-1">Name</th>
-              <th className="border px-2 py-1">Category</th>
-              <th className="border px-2 py-1">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {descendantNodes.map((node) => (
-              <DescendantRow
-                key={node.id}
-                node={node}
-                onSelect={() => setCurrentSystem(node.id)}
-                onDelete={handleDeleteChild}
-                onUpdate={handleUpdateDescendant}
+      {alert && (
+        <Alert
+          message={alert.message}
+          type={alert.type}
+          onDismiss={() => setAlert(null)}
+        />
+      )}
+
+      {currentSystem && (
+        <div>
+          <div className="mb-4 border p-4">
+            <h3 className="font-semibold mb-2">Current System</h3>
+            <div className="mb-2">
+              <label className="mr-2">Name:</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="border rounded px-2 py-1"
               />
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </div>
+            <div className="mb-2">
+              <label className="mr-2">Category:</label>
+              <input
+                type="text"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="border rounded px-2 py-1"
+              />
+            </div>
+            <button
+              onClick={handleUpdateCurrent}
+              className="bg-blue-500 text-white px-3 py-1 rounded"
+            >
+              Update Current System
+            </button>
+          </div>
+          <div className="mb-4 border p-4">
+            <h3 className="font-semibold mb-2">Child Systems</h3>
+            <button
+              onClick={() => setShowChildForm(!showChildForm)}
+              className="bg-green-500 text-white px-3 py-1 rounded mb-2"
+            >
+              {showChildForm ? "Cancel" : "Create Child System"}
+            </button>
+            {showChildForm && (
+              <div className="mb-4 border p-4">
+                <div className="mb-2">
+                  <label className="mr-2">Child Name:</label>
+                  <input
+                    type="text"
+                    value={childName}
+                    onChange={(e) => setChildName(e.target.value)}
+                    className="border rounded px-2 py-1"
+                  />
+                </div>
+                <div className="mb-2">
+                  <label className="mr-2">Child Category:</label>
+                  <input
+                    type="text"
+                    value={childCategory}
+                    onChange={(e) => setChildCategory(e.target.value)}
+                    className="border rounded px-2 py-1"
+                  />
+                </div>
+                <button
+                  onClick={handleSubmitCreateChild}
+                  className="bg-green-600 text-white px-3 py-1 rounded"
+                >
+                  Submit
+                </button>
+              </div>
+            )}
+            <table className="table-auto w-full border mt-2">
+              <thead>
+                <tr>
+                  <th className="border px-2 py-1">Name</th>
+                  <th className="border px-2 py-1">Category</th>
+                  <th className="border px-2 py-1">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {descendantNodes.map((node) => (
+                  <DescendantRow
+                    key={node.id}
+                    node={node}
+                    onSelect={() => setCurrentSystem(node.id)}
+                    onDelete={handleDeleteChild}
+                    onUpdate={handleUpdateDescendant}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
