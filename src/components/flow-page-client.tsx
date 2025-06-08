@@ -6,8 +6,10 @@ import { useNodesState, useEdgesState, Node, Edge } from "@xyflow/react";
 import { supabaseConn as supabase } from "@/lib/supabase"; // Import the Supabase client
 import {
   getColorForUuid,
+  getDescendantIds,
   getDeterministicPositionFromUuid,
 } from "@/lib/util/node_util";
+import { Hierarchy, Interface, System } from "@/lib/definitions";
 
 const FlowDiagram = dynamic(() => import("./flow-diagram"), { ssr: false });
 const SystemDetail = dynamic(() => import("./system-detail"), { ssr: false });
@@ -50,12 +52,12 @@ export default function FlowPageClient() {
       // Create a mapping from child system to its parent.
       const parentMapping: Record<string, string> = {};
 
-      hierarchy?.forEach((rel: any) => {
+      hierarchy?.forEach((rel: Hierarchy) => {
         parentMapping[rel.child_id] = rel.parent_id;
       });
 
       // Map systems into React Flow nodes.
-      const flowNodes: Node[] = (systems || []).map((system: any) => {
+      const flowNodes: Node[] = (systems || []).map((system: System) => {
         const node: Node = {
           id: system.name,
           data: { label: system.name, category: system.category },
@@ -112,14 +114,17 @@ export default function FlowPageClient() {
       // --- End: Sorting ---
 
       // Map interfaces into React Flow edges.
-      const flowEdges: Edge[] = (interfaces || []).map((iface: any) => ({
-        id: `${iface.system_a_id}-${iface.system_b_id}`,
-        source: iface.system_a_id,
-        target: iface.system_b_id,
-        label: iface.connection_type,
-        animated: iface.directional,
-        style: {},
-      }));
+      const flowEdges: Edge[] = (interfaces || []).map((iface: Interface) => {
+        const edge: Edge = {
+          id: `${iface.system_a_id}-${iface.system_b_id}`,
+          source: iface.system_a_id,
+          target: iface.system_b_id,
+          label: iface.connection_type,
+          animated: Boolean(iface.directional),
+          style: {},
+        };
+        return edge;
+      });
       console.log("Flow Nodes:", sortedFlowNodes);
       console.log("Flow Edges:", flowEdges);
       setNodes(sortedFlowNodes);
@@ -129,6 +134,7 @@ export default function FlowPageClient() {
   }, []);
 
   useEffect(() => {
+    const descendantIds = Array.from(getDescendantIds(currentSystem, nodes));
     setNodes((nds) =>
       nds.map((node) => {
         if (node.id === currentSystem) {
@@ -138,7 +144,7 @@ export default function FlowPageClient() {
           };
         }
         if (node.parentId) {
-          if (node.parentId === currentSystem) {
+          if (descendantIds.includes(node.id)) {
             return {
               ...node,
               hidden: false,
