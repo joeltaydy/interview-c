@@ -2,6 +2,8 @@
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app) and integrated with [Supabase](https://supabase.com) and [React Flow](https://reactflow.dev/).
 
+URL for work: https://cs-interview-phi.vercel.app/
+
 ## Getting Started
 
 First, run the development server:
@@ -46,16 +48,19 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 To generate TypeScript types from your Supabase database schema:
 
 1. Install the Supabase CLI:
+
 ```bash
 npm install -g supabase
 ```
 
 2. Login to Supabase:
+
 ```bash
 supabase login
 ```
 
 3. Generate types:
+
 ```bash
 supabase gen types typescript --project-id your-project-id --schema public > src/types/supabase.ts
 ```
@@ -72,6 +77,7 @@ Alternatively, you can use the Supabase browser UI:
 After generating your types, you need to update the Supabase client to use these types:
 
 1. Create a directory for types if it doesn't exist:
+
 ```bash
 mkdir -p src/types
 ```
