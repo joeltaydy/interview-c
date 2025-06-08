@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { Node, Edge } from "@xyflow/react";
+import { Node } from "@xyflow/react";
 import DescendantRow from "@/components/system-detail-row";
 import {
   getColorForUuid,
@@ -13,7 +13,6 @@ import { supabaseConn as supabase } from "@/lib/supabase"; // Import the Supabas
 
 type SystemDetailProps = {
   nodes: Node[];
-  edges: Edge[];
   currentSystem: string;
   setCurrentSystem: (id: string) => void;
   setNodes: React.Dispatch<React.SetStateAction<Node[]>>;
@@ -21,7 +20,6 @@ type SystemDetailProps = {
 
 const SystemDetail: React.FC<SystemDetailProps> = ({
   nodes,
-  edges,
   currentSystem,
   setCurrentSystem,
   setNodes,
@@ -123,7 +121,7 @@ const SystemDetail: React.FC<SystemDetailProps> = ({
       return;
     }
     // Insert new system into the 'systems' table.
-    let { data, error } = await supabase
+    const { data, error } = await supabase
       .from("systems")
       .insert([{ name: childName, category: childCategory }])
       .select();
@@ -133,10 +131,10 @@ const SystemDetail: React.FC<SystemDetailProps> = ({
       return;
     }
     // Create a parent-child relationship in the 'system_hierarchy' table.
-    ({ error } = await supabase
+    const { error: linkError } = await supabase
       .from("system_hierarchy")
-      .insert([{ parent_id: currentSystem, child_id: childName }]));
-    if (error) {
+      .insert([{ parent_id: currentSystem, child_id: childName }]);
+    if (linkError) {
       setAlert({ message: "Descendant system create failed", type: "error" });
     } else {
       setAlert({ message: "Child system created", type: "success" });

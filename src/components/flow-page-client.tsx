@@ -46,9 +46,6 @@ export default function FlowPageClient() {
         );
         return;
       }
-      console.log("Fetched Systems:", systems);
-      console.log("Fetched Interfaces:", interfaces);
-      console.log("Fetched Hierarchy:", hierarchy);
       // Create a mapping from child system to its parent.
       const parentMapping: Record<string, string> = {};
 
@@ -116,17 +113,21 @@ export default function FlowPageClient() {
       // Map interfaces into React Flow edges.
       const flowEdges: Edge[] = (interfaces || []).map((iface: Interface) => {
         const edge: Edge = {
-          id: `${iface.system_a_id}-${iface.system_b_id}`,
+          id: String(iface.id),
           source: iface.system_a_id,
           target: iface.system_b_id,
           label: iface.connection_type,
-          animated: Boolean(iface.directional),
+          animated: true,
           style: {},
+          data: {
+            directional: iface.directional,
+            connection_type: iface.connection_type,
+          },
         };
         return edge;
       });
-      console.log("Flow Nodes:", sortedFlowNodes);
-      console.log("Flow Edges:", flowEdges);
+      // console.log("Flow Nodes:", sortedFlowNodes);
+      // console.log("Flow Edges:", flowEdges);
       setNodes(sortedFlowNodes);
       setEdges(flowEdges);
     }
@@ -193,7 +194,6 @@ export default function FlowPageClient() {
           <div className="flex-1 border-b p-4 overflow-auto">
             <SystemDetail
               nodes={nodes}
-              edges={edges}
               currentSystem={currentSystem}
               setCurrentSystem={setCurrentSystem}
               setNodes={setNodes}
@@ -204,6 +204,7 @@ export default function FlowPageClient() {
               nodes={nodes}
               edges={edges}
               currentSystem={currentSystem}
+              setEdges={setEdges}
             />
           </div>
         </div>

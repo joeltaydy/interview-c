@@ -19,15 +19,20 @@ export type System = {
   category?: string;
 };
 
+export type EdgeData = {
+  directional: number;
+  connection_type: string;
+};
+
 export type Hierarchy = {
   parent_id: string;
   child_id: string;
 };
 
 export type Interface = {
-  id: string;
+  id?: string;
   system_a_id: string;
   system_b_id: string;
-  directional: string;
+  directional: number;
   connection_type: string;
 };
