@@ -20,30 +20,28 @@ import {
   Node,
   Edge,
   Connection,
+  OnNodesChange,
+  OnEdgesChange,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
 type FlowDiagramProps = {
   nodes: Node[];
-  setNodes: React.Dispatch<React.SetStateAction<Node[]>>;
-  onNodesChange: (changes: any) => void;
+  onNodesChange: OnNodesChange;
   edges: Edge[];
   setEdges: React.Dispatch<React.SetStateAction<Edge[]>>;
-  onEdgesChange: (changes: any) => void;
+  onEdgesChange: OnEdgesChange;
   onNodeClick: (event: React.MouseEvent, node: Node) => void;
 };
 
 export default function FlowDiagram({
   nodes,
-  setNodes,
   onNodesChange,
   edges,
   setEdges,
   onEdgesChange,
   onNodeClick,
 }: FlowDiagramProps) {
-  const [nodeName, setNodeName] = useState("");
-
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]

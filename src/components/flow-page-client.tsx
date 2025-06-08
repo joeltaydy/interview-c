@@ -4,15 +4,10 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useNodesState, useEdgesState, Node, Edge } from "@xyflow/react";
 import { supabaseConn as supabase } from "@/lib/supabase"; // Import the Supabase client
-// Helper to generate a random hex color.
-function getRandomColor() {
-  return (
-    "#" +
-    Math.floor(Math.random() * 0xffffff)
-      .toString(16)
-      .padStart(6, "0")
-  );
-}
+import {
+  getColorForUuid,
+  getDeterministicPositionFromUuid,
+} from "@/lib/util/node_util";
 
 const FlowDiagram = dynamic(() => import("./flow-diagram"), { ssr: false });
 const SystemDetail = dynamic(() => import("./system-detail"), { ssr: false });
@@ -49,9 +44,12 @@ export default function FlowPageClient() {
         );
         return;
       }
-
+      console.log("Fetched Systems:", systems);
+      console.log("Fetched Interfaces:", interfaces);
+      console.log("Fetched Hierarchy:", hierarchy);
       // Create a mapping from child system to its parent.
       const parentMapping: Record<string, string> = {};
+
       hierarchy?.forEach((rel: any) => {
         parentMapping[rel.child_id] = rel.parent_id;
       });
@@ -61,9 +59,9 @@ export default function FlowPageClient() {
         const node: Node = {
           id: system.name,
           data: { label: system.name, category: system.category },
-          position: { x: Math.random() * 500, y: Math.random() * 500 },
+          position: getDeterministicPositionFromUuid(system.id),
           style: {
-            background: getRandomColor(),
+            background: getColorForUuid(system.id),
             color: "white",
             border: "1px solid #333",
             borderRadius: "8px",
@@ -78,7 +76,6 @@ export default function FlowPageClient() {
           node.expandParent = true; // Ensure parent is expanded if it exists
           node.hidden = true; // Ensure the children nodes are hidden by default
         }
-
         return node;
       });
 
@@ -123,8 +120,8 @@ export default function FlowPageClient() {
         animated: iface.directional,
         style: {},
       }));
-      // console.log("Flow Nodes:", sortedFlowNodes);
-      // console.log("Flow Edges:", flowEdges);
+      console.log("Flow Nodes:", sortedFlowNodes);
+      console.log("Flow Edges:", flowEdges);
       setNodes(sortedFlowNodes);
       setEdges(flowEdges);
     }
@@ -165,11 +162,10 @@ export default function FlowPageClient() {
             hidden: false,
           };
         }
-
         return edge;
       })
     );
-  }, [currentSystem, setNodes, setEdges]);
+  }, [currentSystem]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -179,7 +175,6 @@ export default function FlowPageClient() {
         <div className="flex-1 min-w-0 border-r">
           <FlowDiagram
             nodes={nodes}
-            setNodes={setNodes}
             onNodesChange={onNodesChange}
             edges={edges}
             setEdges={setEdges}
@@ -195,6 +190,7 @@ export default function FlowPageClient() {
               edges={edges}
               currentSystem={currentSystem}
               setCurrentSystem={setCurrentSystem}
+              setNodes={setNodes}
             />
           </div>
           <div className="flex-1 p-4 overflow-auto">

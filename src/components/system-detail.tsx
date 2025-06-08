@@ -1,29 +1,30 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { Node, Edge, applyNodeChanges, NodeReplaceChange } from "@xyflow/react";
-import { createClient } from "@supabase/supabase-js";
+import { Node, Edge } from "@xyflow/react";
 import DescendantRow from "@/components/system-detail-row";
-import { getDescendantIds } from "@/lib/util/node_util";
+import {
+  getColorForUuid,
+  getDescendantIds,
+  getDeterministicPositionFromUuid,
+} from "@/lib/util/node_util";
 import Alert from "./alert";
+import { supabaseConn as supabase } from "@/lib/supabase"; // Import the Supabase client
 
-type Props = {
+type SystemDetailProps = {
   nodes: Node[];
   edges: Edge[];
   currentSystem: string;
   setCurrentSystem: (id: string) => void;
+  setNodes: React.Dispatch<React.SetStateAction<Node[]>>;
 };
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-const SystemDetail: React.FC<Props> = ({
+const SystemDetail: React.FC<SystemDetailProps> = ({
   nodes,
   edges,
   currentSystem,
   setCurrentSystem,
+  setNodes,
 }) => {
   const [alert, setAlert] = useState<{
     message: string;
@@ -46,6 +47,37 @@ const SystemDetail: React.FC<Props> = ({
   const [showChildForm, setShowChildForm] = useState<boolean>(false);
   const [childName, setChildName] = useState<string>("");
   const [childCategory, setChildCategory] = useState<string>("");
+
+  const updateNodeData = (
+    orgId: string,
+    newName: string,
+    newCategory: string
+  ) => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === orgId) {
+          return {
+            ...node,
+            id: newName,
+            data: {
+              ...node.data,
+              label: newName,
+              category: newCategory,
+            },
+          };
+        }
+        if (node.parentId) {
+          if (node.parentId === orgId) {
+            return {
+              ...node,
+              parentId: newName, // Update parentId to new name
+            };
+          }
+        }
+        return node;
+      })
+    );
+  };
 
   // Update form state when current system changes.
   useEffect(() => {
@@ -79,6 +111,8 @@ const SystemDetail: React.FC<Props> = ({
       setAlert({ message: "Error updating current system", type: "error" });
     } else {
       setAlert({ message: "Current system updated", type: "success" });
+      updateNodeData(currentSystem, name, category);
+      setCurrentSystem(name); // Update current system to new name
     }
   }
 
@@ -89,10 +123,11 @@ const SystemDetail: React.FC<Props> = ({
       return;
     }
     // Insert new system into the 'systems' table.
-    let { error } = await supabase
+    let { data, error } = await supabase
       .from("systems")
-      .insert([{ name: childName, category: childCategory }]);
-    if (error) {
+      .insert([{ name: childName, category: childCategory }])
+      .select();
+    if (error || !data || data.length === 0) {
       console.error("Insert error", error);
       setAlert({ message: "Descendant system create failed", type: "error" });
       return;
@@ -109,6 +144,25 @@ const SystemDetail: React.FC<Props> = ({
       setChildName("");
       setChildCategory("");
       setShowChildForm(false);
+
+      const newNode: Node = {
+        id: childName,
+        data: { label: childName, category: childCategory },
+        position: getDeterministicPositionFromUuid(data[0].id),
+        style: {
+          background: getColorForUuid(data[0].id),
+          color: "white",
+          border: "1px solid #333",
+          borderRadius: "8px",
+          padding: "10px",
+          width: 180,
+        },
+        parentId: currentSystem,
+        expandParent: true, // Ensure parent is expanded if it exists
+        hidden: false, // Ensure the children nodes are hidden by default
+      };
+
+      setNodes((nds) => nds.concat(newNode));
     }
   }
 
@@ -123,6 +177,7 @@ const SystemDetail: React.FC<Props> = ({
       setAlert({ message: "Descendant system delete failed", type: "error" });
     } else {
       setAlert({ message: "Descendant system deleted", type: "success" });
+      setNodes((nds) => nds.filter((node) => node.id !== childId));
     }
   }
 
@@ -140,6 +195,7 @@ const SystemDetail: React.FC<Props> = ({
       setAlert({ message: "Error updating descendant system", type: "error" });
     } else {
       setAlert({ message: "Descendant system updated", type: "success" });
+      updateNodeData(childId, newName, newCategory);
     }
   }
 
@@ -187,7 +243,9 @@ const SystemDetail: React.FC<Props> = ({
             <h3 className="font-semibold mb-2">Child Systems</h3>
             <button
               onClick={() => setShowChildForm(!showChildForm)}
-              className="bg-green-500 text-white px-3 py-1 rounded mb-2"
+              className={`${
+                showChildForm ? "bg-red-500" : "bg-green-500"
+              } text-white px-3 py-1 rounded mb-2`}
             >
               {showChildForm ? "Cancel" : "Create Child System"}
             </button>

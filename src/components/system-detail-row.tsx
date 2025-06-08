@@ -24,7 +24,7 @@ const DescendantRow: React.FC<DescendantRowProps> = ({
 
   return (
     <tr>
-      <td className="border px-2 py-1 cursor-pointer" onClick={onSelect}>
+      <td className="border px-2 py-1">
         {editMode ? (
           <input
             type="text"
@@ -33,7 +33,12 @@ const DescendantRow: React.FC<DescendantRowProps> = ({
             className="border rounded px-2 py-1"
           />
         ) : (
-          node.id
+          <button
+            onClick={onSelect}
+            className="bg-blue-500 text-white px-2 py-1 rounded"
+          >
+            {node.id}
+          </button>
         )}
       </td>
       <td className="border px-2 py-1">

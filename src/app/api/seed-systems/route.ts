@@ -1,10 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabaseConn as supabase } from "@/lib/supabase"; // Import the Supabase client
 
 export async function GET() {
   // Seed systems
@@ -12,9 +7,9 @@ export async function GET() {
   await supabase.from("systems").insert([
     { name: "System A", category: "Alpha" },
     { name: "System B", category: "Beta" },
-    { name: "System C", category: "Gamma" },
+    { name: "System C", category: "Charlie" },
     { name: "System D", category: "Delta" },
-    { name: "System E", category: "Epsilon" },
+    { name: "System E", category: "Echo" },
   ]);
 
   // Seed interfaces_with
@@ -23,7 +18,7 @@ export async function GET() {
     {
       system_a_id: "System A",
       system_b_id: "System B",
-      connection_type: "API",
+      connection_type: "External",
       directional: 1,
     },
     {
@@ -35,7 +30,7 @@ export async function GET() {
     {
       system_a_id: "System A",
       system_b_id: "System D",
-      connection_type: "Render",
+      connection_type: "External",
       directional: 1,
     },
   ]);
